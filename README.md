@@ -7,6 +7,7 @@ This is a simple YouTube Analytics web application that allows users to sign in 
 - Google OAuth 2.0 authentication
 - Display YouTube channel details
 - List videos with details including thumbnails, titles, publish dates, and descriptions
+- Automatically refreshes expired access tokens using refresh tokens
 
 ## Prerequisites
 
