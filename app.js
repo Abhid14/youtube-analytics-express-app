@@ -15,9 +15,9 @@ passport.use(new GoogleStrategy({
   clientSecret: GOOGLE_CLIENT_SECRET,
   callbackURL: CALLBACK_URL
 }, (accessToken, refreshToken, profile, cb) => {
-  db.run('INSERT OR REPLACE INTO users (googleId, displayName, accessToken, refreshToken) VALUES (?, ?, ?, ?)', 
-         [profile.id, profile.displayName, accessToken, refreshToken], 
-         (err) => cb(err, profile));
+  db.run('INSERT OR REPLACE INTO users (googleId, displayName, accessToken, refreshToken) VALUES (?, ?, ?, ?)',
+    [profile.id, profile.displayName, accessToken, refreshToken],
+    (err) => cb(err, { googleId: profile.id }));
 }));
 
 passport.serializeUser((user, done) => {
@@ -26,7 +26,8 @@ passport.serializeUser((user, done) => {
 
 passport.deserializeUser((id, done) => {
   db.get('SELECT * FROM users WHERE googleId = ?', [id], (err, row) => {
-    done(err, row);
+    if (err) { return done(err); }
+    done(null, row);
   });
 });
 
@@ -57,6 +58,27 @@ async function refreshAccessToken(user) {
   }
 }
 
+// Function to fetch YouTube Analytics data
+async function fetchYouTubeAnalyticsData(oauth2Client, channelId) {
+  const youtubeAnalytics = google.youtubeAnalytics({ version: 'v2', auth: oauth2Client });
+
+  try {
+    const response = await youtubeAnalytics.reports.query({
+      ids: 'channel==' + channelId,
+      startDate: '2023-01-01',
+      endDate: '2023-12-31',
+      metrics: 'views,estimatedMinutesWatched,averageViewDuration,subscribersGained,subscribersLost',
+      dimensions: 'day',
+      sort: 'day'
+    });
+
+    return response.data;
+  } catch (err) {
+    console.error('Error fetching YouTube Analytics data:', err);
+    throw err;
+  }
+}
+
 // Routes
 app.get('/', (req, res) => {
   res.render('index');
@@ -66,7 +88,7 @@ app.get('/login', (req, res) => {
   res.render('login');
 });
 
-app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'https://www.googleapis.com/auth/youtube.readonly'] }));
+app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'https://www.googleapis.com/auth/youtube.readonly', 'https://www.googleapis.com/auth/yt-analytics.readonly'] }));
 
 app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/login' }), (req, res) => {
   res.redirect('/dashboard');
@@ -100,7 +122,10 @@ app.get('/dashboard', async (req, res) => {
     });
     const videos = videosResponse.data.items;
 
-    res.render('dashboard', { profile: req.user, channelData: channelData, videos: videos });
+    // Fetch YouTube Analytics data
+    const analyticsData = await fetchYouTubeAnalyticsData(oauth2Client, channelData.id);
+
+    res.render('dashboard', { profile: req.user, channelData: channelData, videos: videos, analyticsData: analyticsData });
   } catch (err) {
     if (err.code === 401) {  // Unauthorized error, likely due to expired access token
       try {
@@ -121,7 +146,9 @@ app.get('/dashboard', async (req, res) => {
         });
         const videos = videosResponse.data.items;
 
-        res.render('dashboard', { profile: req.user, channelData: channelData, videos: videos });
+        const analyticsData = await fetchYouTubeAnalyticsData(oauth2Client, channelData.id);
+
+        res.render('dashboard', { profile: req.user, channelData: channelData, videos: videos, analyticsData: analyticsData });
       } catch (refreshErr) {
         console.error('Error refreshing access token and retrying request:', refreshErr);
         res.status(500).send('Error retrieving YouTube data');

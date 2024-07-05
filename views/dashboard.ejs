@@ -1,40 +1,79 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <title>Dashboard</title>
   <style>
     .video-thumbnail {
       max-width: 200px;
     }
+
     .video-item {
       margin-bottom: 20px;
     }
   </style>
 </head>
+
 <body>
   <h1>Welcome, <%= profile.displayName %>!</h1>
   <h2>Your YouTube Channel Data</h2>
   <ul>
-    <li>Title: <%= channelData.snippet.title %></li>
-    <li>Description: <%= channelData.snippet.description %></li>
-    <li>Subscribers: <%= channelData.statistics.subscriberCount %></li>
-    <li>Views: <%= channelData.statistics.viewCount %></li>
-    <li>Videos: <%= channelData.statistics.videoCount %></li>
+    <li>Title: <%= channelData.snippet.title %>
+    </li>
+    <li>Description: <%= channelData.snippet.description %>
+    </li>
+    <li>Subscribers: <%= channelData.statistics.subscriberCount %>
+    </li>
+    <li>Views: <%= channelData.statistics.viewCount %>
+    </li>
+    <li>Videos: <%= channelData.statistics.videoCount %>
+    </li>
   </ul>
 
   <h2>Your Videos</h2>
   <ul>
-    <% videos.forEach(video => { %>
+    <% videos.forEach(video=> { %>
       <li class="video-item">
-        <h3><%= video.snippet.title %></h3>
-        <img class="video-thumbnail" src="<%= video.snippet.thumbnails.default.url %>" alt="<%= video.snippet.title %> thumbnail">
-        <p><strong>Published at:</strong> <%= video.snippet.publishedAt %></p>
-        <p><strong>Description:</strong> <%= video.snippet.description %></p>
-        <a href="https://www.youtube.com/watch?v=<%= video.contentDetails.videoId %>" target="_blank">Watch on YouTube</a>
+        <h3>
+          <%= video.snippet.title %>
+        </h3>
+        <img class="video-thumbnail" src="<%= video.snippet.thumbnails.default.url %>"
+          alt="<%= video.snippet.title %> thumbnail">
+        <p><strong>Published at:</strong>
+          <%= video.snippet.publishedAt %>
+        </p>
+        <p><strong>Description:</strong>
+          <%= video.snippet.description %>
+        </p>
+        <a href="https://www.youtube.com/watch?v=<%= video.contentDetails.videoId %>" target="_blank">Watch on
+          YouTube</a>
       </li>
-    <% }) %>
+      <% }) %>
+  </ul>
+
+  <h2>YouTube Analytics Data</h2>
+  <ul>
+    <% analyticsData.rows.forEach(row=> { %>
+      <li>
+        <strong>Date:</strong>
+        <%= row[0] %>
+          <ul>
+            <li>Views: <%= row[1] %>
+            </li>
+            <li>Estimated Minutes Watched: <%= row[2] %>
+            </li>
+            <li>Average View Duration: <%= row[3] %>
+            </li>
+            <li>Subscribers Gained: <%= row[4] %>
+            </li>
+            <li>Subscribers Lost: <%= row[5] %>
+            </li>
+          </ul>
+      </li>
+      <% }) %>
   </ul>
 
   <a href="/logout">Logout</a>
 </body>
+
 </html>
